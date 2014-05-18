@@ -1,5 +1,7 @@
 {_} = require "./Underscore"
 
+Utils = require "./Utils"
+
 {Events} = require "./Events"
 {BaseClass} = require "./BaseClass"
 {Defaults} = require "./Defaults"
@@ -84,9 +86,9 @@ class exports.LayerStates extends BaseClass
 				continue
 
 			# Allow dynamic properties as functions
-			value = value.call(@layer, @layer, stateName) if _.isFunction(value)
+			value = Utils.functor(value).call(@layer, @layer, stateName)
 
-			# Set the new value 
+			# Set the new value
 			properties[propertyName] = value
 
 		if instant is true
@@ -97,10 +99,11 @@ class exports.LayerStates extends BaseClass
 		else
 			# Start the animation and update the state when finished
 			animationOptions ?= @animationOptions
+			animationOptions = Utils.functor(animationOptions).call(@layer, @layer, stateName)
 			animationOptions.properties = properties
 
 			@_animation = @layer.animate animationOptions
-			@_animation.on "stop", => 
+			@_animation.on "stop", =>
 				@emit Events.StateDidSwitch, _.last(@_previousStates), stateName, @
 
 

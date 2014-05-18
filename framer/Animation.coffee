@@ -68,7 +68,7 @@ class exports.Animation extends EventEmitter
 
 		# Only animate numeric properties for now
 		for k, v of properties
-			animatableProperties[k] = v if _.isNumber v
+			animatableProperties[k] = v if _.isNumber(v) or _.isFunction(v)
 
 		animatableProperties
 
@@ -134,13 +134,13 @@ class exports.Animation extends EventEmitter
 
 		# Filter out the properties that are equal
 		for k, v of @options.properties
-			stateB[k] = v if stateA[k] != v
+			stateB[k] = v if _.isFunction(v) or stateA[k] != v
 
 		if _.isEqual stateA, stateB
 			console.warn "Nothing to animate"
 
 		console.debug "Animation.start"
-		console.debug "\t#{k}: #{stateA[k]} -> #{stateB[k]}" for k, v of stateB 
+		console.debug "\t#{k}: #{stateA[k]} -> #{stateB[k]}" for k, v of stateB
 
 		@_animator.on "start", => @emit "start"
 		@_animator.on "stop",  => @emit "stop"
@@ -152,7 +152,7 @@ class exports.Animation extends EventEmitter
 		if @_repeatCounter > 0
 			@_animator.on "end", =>
 				for k, v of stateA
-					target[k] = v
+					target[k] = Utils.functor(v)()
 				@_repeatCounter--
 				@start()
 
@@ -160,7 +160,7 @@ class exports.Animation extends EventEmitter
 		# animation loop. It needs to be very fast.
 		@_animator.on "tick", (value) ->
 			for k, v of stateB
-				target[k] = Utils.mapRange value, 0, 1, stateA[k], stateB[k]
+				target[k] = Utils.mapRange value, 0, 1, Utils.functor(stateA[k])(), Utils.functor(stateB[k])()
 			return # For performance
 
 		start = =>
